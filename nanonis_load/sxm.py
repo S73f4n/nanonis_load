@@ -930,6 +930,7 @@ class Plot:
         subtract_line : bool = False,
         cmap=util.get_w_cmap(),
         rasterized=True,
+        axes=None
     ):
 
         self.data = sxm_data
@@ -950,8 +951,12 @@ class Plot:
         # if direction:
         #     image_data=np.fliplr(image_data)
 
-        self.fig = plt.figure()
-        self.ax = self.fig.add_subplot(111)
+        if axes is not None:
+            self.ax = axes
+            self.fig = self.ax.figure
+        else:
+            self.fig = plt.figure()
+            self.ax = self.fig.add_subplot(111)
         x_range = sxm_data.x_range
         y_range = sxm_data.y_range
         x_pixels = sxm_data.x_pixels
