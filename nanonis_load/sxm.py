@@ -930,6 +930,7 @@ class Plot:
         subtract_line : bool = False,
         cmap=util.get_w_cmap(),
         rasterized=True,
+        cbar : bool = True,
         axes=None
     ):
 
@@ -982,7 +983,8 @@ class Plot:
             rasterized=rasterized,
         )  # pcolormesh chops off last column and row here
         self.ax.set_aspect("equal")
-        self.fig.colorbar(self.im_plot, ax=self.ax)
+        if cbar:
+            self.cb = self.fig.colorbar(self.im_plot, ax=self.ax)
         self.image_data = image_data
 
     def xlim(self, x_min, x_max):
