@@ -1,17 +1,16 @@
 # nanonis_load/gapmap.py
-from __future__ import annotations
-from . import didv
-from . import dual_gate as dg
-
+import copy
 import glob
 import itertools
-import copy
 from typing import Iterable, List, Optional, Sequence, Tuple, Union
 
-import numpy as np
-import scipy.interpolate
 import matplotlib.pyplot as plt
 import matplotlib.widgets
+import numpy as np
+import scipy.interpolate
+
+from . import didv
+from . import dual_gate as dg
 
 
 class Gapmap:
@@ -56,7 +55,9 @@ class Gapmap:
 
         # Accept either a list of Spectrum objects or a filename pattern string
         if isinstance(spectra_or_pattern, str):
-            pattern = f"{spectra_or_pattern}*.dat" if glob_wildcard else spectra_or_pattern
+            pattern = (
+                f"{spectra_or_pattern}*.dat" if glob_wildcard else spectra_or_pattern
+            )
             files = sorted(glob.glob(pattern))
             if not files:
                 raise FileNotFoundError(f"No files found matching pattern: {pattern}")
@@ -74,26 +75,37 @@ class Gapmap:
     def _compute_basic_arrays(self):
         """Compute arrays: current, Z, V_g, V_m, gap_sizes and mask/filter used later."""
         # current array (not used directly for plotting but preserved for API)
-        self.current = np.array([spectrum.data[self.channel] for spectrum in self.spectra])
+        self.current = np.array(
+            [spectrum.data[self.channel] for spectrum in self.spectra]
+        )
 
         # Bias array from the first spectrum. Assumes all spectra were taken at the same bias values
-        self.biases = np.array(self.spectra[0].data['Bias calc (V)'])
+        self.biases = np.array(self.spectra[0].data["Bias calc (V)"])
 
         # Z (header 'Z (m)')
-        self.Z = np.array([float(spectrum.header.get("Z (m)", np.nan)) for spectrum in self.spectra])
+        self.Z = np.array(
+            [float(spectrum.header.get("Z (m)", np.nan)) for spectrum in self.spectra]
+        )
 
         # mask similar to your notebook: Z < 0e-9
         self._filter_mask = self.Z < 0e-9
 
         # gate voltages (first and second gates) filtered
-        self.V_g = np.array([spectrum.gate_voltage for spectrum in self.spectra])[self._filter_mask]
-        self.V_m = np.array([spectrum.second_gate for spectrum in self.spectra])[self._filter_mask]
+        self.V_g = np.array([spectrum.gate_voltage for spectrum in self.spectra])[
+            self._filter_mask
+        ]
+        self.V_m = np.array([spectrum.second_gate for spectrum in self.spectra])[
+            self._filter_mask
+        ]
 
         # compute gap sizes using didv.Spectrum.get_gap_size
         # we compute for all spectra, then apply the same filter
         gap_list = np.array(
             [
-                spectrum.get_gap_size(current_threshold=self.current_threshold, gaussian_filter_order=self.gaussian_filter_order)
+                spectrum.get_gap_size(
+                    current_threshold=self.current_threshold,
+                    gaussian_filter_order=self.gaussian_filter_order,
+                )
                 for spectrum in self.spectra
             ]
         )
@@ -103,7 +115,9 @@ class Gapmap:
         self.unique_V_g = np.array(sorted(list(set(self.V_g))))
         self.unique_V_m = np.array(sorted(list(set(self.V_m))))
 
-    def compute_grid_interpolation(self, method: str = "nearest", rescale: bool = True) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def compute_grid_interpolation(
+        self, method: str = "nearest", rescale: bool = True
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Interpolate gap_sizes onto cartesian grid (V_m, V_g) and return:
             unique_V_g (x axis), unique_V_m (y axis), interp_values (flattened in product order)
@@ -114,14 +128,16 @@ class Gapmap:
         # perform interpolation
         interp_values = scipy.interpolate.griddata(
             np.c_[self.V_m, self.V_g],  # points (V_m, V_g)
-            self.gap_sizes,             # values
-            unique_pairs,                      # query points
+            self.gap_sizes,  # values
+            unique_pairs,  # query points
             method=method,
             rescale=rescale,
         )
         return self.unique_V_g, self.unique_V_m, np.array(interp_values)
-    
-    def compute_bias_slice_interpolation(self, bias, gradient=False, method: str = 'nearest'):
+
+    def compute_bias_slice_interpolation(
+        self, bias, gradient=False, method: str = "nearest"
+    ):
         """
         Returns the current (or its gradient) at a bias slice
         """
@@ -134,13 +150,13 @@ class Gapmap:
             current_slice = self.current[:, bias_index]
         interp_values = scipy.interpolate.griddata(
             np.c_[self.V_m, self.V_g],  # points (V_m, V_g)
-            current_slice,             # values
-            unique_pairs,                      # query points
+            current_slice,  # values
+            unique_pairs,  # query points
             method=method,
             rescale=True,
         )
         return interp_values
-    
+
     def capacitance_calculator(self):
         delta_V_g = self.delta_V_g
         delta_V_m = self.delta_V_m
@@ -151,8 +167,7 @@ class Gapmap:
         self.c_t = c_t
 
         return self.c_g, self.c_t
-        
-    
+
     def filling_factor_convert(self, V_g, V_m):
         reshaped_V_g = V_g - self.V_g_offset
         reshaped_V_m = V_m - self.V_m_offset
@@ -166,9 +181,10 @@ class Gapmap:
         v_m = (total_filling_factor - delta_filling_factor) / 2
 
         return total_filling_factor, delta_filling_factor, v_t, v_m, c_g, c_t
-    
-    
-    def invert_filling_factor_calculator(self, constant: list, variable: list, N: int = 50):
+
+    def invert_filling_factor_calculator(
+        self, constant: list, variable: list, N: int = 50
+    ):
         """
         Build V_g and V_m ranges given one fixed quantity (constant) and the variable range (variable).
         'constant' should be like ['total_filling_factor', value] or ['v_t', value]
@@ -206,14 +222,17 @@ class Gapmap:
 
         c_g, c_t = self.capacitance_calculator()
 
-        total = np.linspace(float(total_filling_factor[0]), float(total_filling_factor[1]), N)
-        delta = np.linspace(float(delta_filling_factor[0]), float(delta_filling_factor[1]), N)
+        total = np.linspace(
+            float(total_filling_factor[0]), float(total_filling_factor[1]), N
+        )
+        delta = np.linspace(
+            float(delta_filling_factor[0]), float(delta_filling_factor[1]), N
+        )
 
         V_g = total / c_g
         V_m = (delta + c_g * V_g) / (2.0 * c_t)
 
-        return V_g, V_m   
-
+        return V_g, V_m
 
     def plot_gap_size(
         self,
@@ -228,19 +247,21 @@ class Gapmap:
         shading: str = "nearest",
         interp_method: str = "nearest",
         interp_rescale: bool = True,
-        total_filling_factor : bool = False,
-        top_filling_factor : bool = False,
+        total_filling_factor: bool = False,
+        top_filling_factor: bool = False,
     ) -> Tuple[plt.Figure, plt.Axes]:
         """
         Create a pcolormesh gap map like in your notebook.
 
         Returns (fig, ax)
         """
-        uniq_Vg, uniq_Vm, interp_vals = self.compute_grid_interpolation(method=interp_method, rescale=interp_rescale)
+        uniq_Vg, uniq_Vm, interp_vals = self.compute_grid_interpolation(
+            method=interp_method, rescale=interp_rescale
+        )
 
         # reshape into rows = len(unique_V_m), cols = len(unique_V_g)
         Z = interp_vals.reshape(-1, len(uniq_Vg)) * 1000
-                
+
         v_g_2d, v_m_2d = np.meshgrid(uniq_Vg, uniq_Vm)
 
         self.v_g_2d = v_g_2d
@@ -255,20 +276,49 @@ class Gapmap:
         else:
             fig = ax.figure
 
-        if total_filling_factor == True :
-            total, delta, _, _, _, _ = self.filling_factor_convert(self.v_g_2d, self.v_m_2d)
-            pcm = ax.pcolormesh(total, delta, Z , shading=shading, cmap=cmap, vmin=vmin, vmax=vmax)
+        if total_filling_factor == True:
+            total, delta, _, _, _, _ = self.filling_factor_convert(
+                self.v_g_2d, self.v_m_2d
+            )
+            pcm = ax.pcolormesh(
+                total,
+                delta,
+                Z,
+                shading=shading,
+                cmap=cmap,
+                vmin=vmin,
+                vmax=vmax,
+                rasterized=True,
+            )
             xlabel = "Total filling factor"
             ylabel = r"$\Delta \nu$"
 
-        elif top_filling_factor == True :
+        elif top_filling_factor == True:
             _, _, v_t, v_m, _, _ = self.filling_factor_convert(self.v_g_2d, self.v_m_2d)
-            pcm = ax.pcolormesh(v_t, v_m, Z , shading=shading, cmap=cmap, vmin=vmin, vmax=vmax)
+            pcm = ax.pcolormesh(
+                v_t,
+                v_m,
+                Z,
+                shading=shading,
+                cmap=cmap,
+                vmin=vmin,
+                vmax=vmax,
+                rasterized=True,
+            )
             xlabel = r"$\nu top$"
             ylabel = r"$\nu middle$"
 
-        else :
-            pcm = ax.pcolormesh(sorted(uniq_Vg), sorted(uniq_Vm_mV), Z , shading=shading, cmap=cmap, vmin=vmin, vmax=vmax)
+        else:
+            pcm = ax.pcolormesh(
+                sorted(uniq_Vg),
+                sorted(uniq_Vm_mV),
+                Z,
+                shading=shading,
+                cmap=cmap,
+                vmin=vmin,
+                vmax=vmax,
+                rasterized=True,
+            )
 
         cbar = fig.colorbar(pcm, ax=ax) if colorbar else None
 
@@ -282,31 +332,53 @@ class Gapmap:
 
         return fig, ax
 
-
-    def plot_bias_slice(self, fig=None, ax=None, vmin=None, vmax=None, gradient=True, cmap='RdBu_r',  xlabel: str = "$V_g$ (V)",  ylabel: str = "$V_m$ (V)", auto_clim=True):
+    def plot_bias_slice(
+        self,
+        fig=None,
+        ax=None,
+        vmin=None,
+        vmax=None,
+        gradient=True,
+        cmap="RdBu_r",
+        xlabel: str = "$V_g$ (V)",
+        ylabel: str = "$V_m$ (V)",
+        auto_clim=True,
+    ):
         if ax is None:
             fig, ax = plt.subplots()
 
         fig.subplots_adjust(bottom=0.25)
-        
+
         slider_ax = fig.add_axes([0.25, 0.01, 0.65, 0.03])
         self.bias_slider = matplotlib.widgets.Slider(
             ax=slider_ax,
             label="Bias (V)",
             valmin=np.amin(self.biases),
             valmax=np.amax(self.biases),
-            valinit=np.amin(self.biases)
+            valinit=np.amin(self.biases),
         )
 
-        bias_slice = self.compute_bias_slice_interpolation(np.amin(self.biases), gradient=gradient).reshape((-1, len(self.unique_V_g)))
-        
-        pcolor = ax.pcolormesh(sorted(self.unique_V_g), sorted(self.unique_V_m), bias_slice, vmin=vmin if not auto_clim else np.quantile(bias_slice, 0.01), vmax=vmax if not auto_clim else np.quantile(bias_slice, 0.99), cmap=cmap)
+        bias_slice = self.compute_bias_slice_interpolation(
+            np.amin(self.biases), gradient=gradient
+        ).reshape((-1, len(self.unique_V_g)))
+
+        pcolor = ax.pcolormesh(
+            sorted(self.unique_V_g),
+            sorted(self.unique_V_m),
+            bias_slice,
+            vmin=vmin if not auto_clim else np.quantile(bias_slice, 0.01),
+            vmax=vmax if not auto_clim else np.quantile(bias_slice, 0.99),
+            cmap=cmap,
+        )
         cbar = fig.colorbar(pcolor)
+
         def slider_update(bias):
             new_slice = self.compute_bias_slice_interpolation(bias, gradient=gradient)
             pcolor.set_array(new_slice)
             if auto_clim:
-                pcolor.set_clim(np.quantile(new_slice, 0.01), np.quantile(new_slice, 0.99))
+                pcolor.set_clim(
+                    np.quantile(new_slice, 0.01), np.quantile(new_slice, 0.99)
+                )
             fig.canvas.draw_idle()
 
         self.bias_slider.on_changed(slider_update)
@@ -319,6 +391,5 @@ class Gapmap:
 
         if cbar is not None:
             cbar.set_label("Current (A)")
-
 
         return fig, ax

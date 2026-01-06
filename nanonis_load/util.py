@@ -10,6 +10,100 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.interpolate
+import scipy.ndimage
+import scipy.optimize
+
+
+def correct_fft2D(image_data: np.ndarray, window_function: str = "") -> np.ndarray:
+    window = np.ones(image_data.shape)
+    if window_function.lower() == "blackman":
+        window = np.outer(
+            np.blackman(image_data.shape[0]), np.blackman(image_data.shape[1])
+        )
+
+    return np.fft.fftshift(np.fft.fft2(np.fft.fftshift(window * image_data)))
+
+
+def gaussian2D(xy, amplitude, x0, y0, sigma_x, sigma_y, theta, offset):
+    x, y = xy
+    x_rot = (x - x0) * np.cos(theta) + (y - y0) * np.sin(theta)
+    y_rot = -(x - x0) * np.sin(theta) + (y - y0) * np.cos(theta)
+    return amplitude * np.exp(
+        -(x_rot**2) / (2 * sigma_x**2) - y_rot**2 / (2 * sigma_y**2)
+    )
+
+
+def gaussian_fit2D(X, Y, Z):
+    xy_data = np.vstack((X.ravel(), Y.ravel()))
+    initial_guess = (
+        np.amax(Z),
+        X[np.unravel_index(np.argmax(Z), Z.shape)],
+        Y[np.unravel_index(np.argmax(Z), Z.shape)],
+        1e-2,
+        1e-2,
+        0,
+        np.amin(Z),
+    )
+    fit, cov = scipy.optimize.curve_fit(
+        gaussian2D, xy_data, Z.ravel(), p0=initial_guess
+    )
+    return fit, cov
+
+
+def find_peaks2D(
+    X, Y, Z, min_amplitude=0.1, max_filter_width=5, fit_radius=5, full_output=False
+):
+    """
+    Locates peaks in a 2D array by finding local maxima using maximum_filter and Gaussian fitting them.
+
+    Parameters
+    ----------
+    X, Y : ndarray
+        The X and Y coordinates corresponding to the Z values.
+    Z : ndarray
+        The Z values to find peaks in.
+    max_filter_width : int
+        The window width (in pixels) over which to perform maximum filtering.
+    fit_radius : int
+        The radius (in pixels) over which to perform Gaussian fitting.
+
+    Returns
+    -------
+    peak_coords : ndarray
+        The coordinates of the peaks
+    peak_amplitudes : ndarray
+        The amplitudes of the peaks. Only returned if full_output is true.
+    """
+    normalized_Z = Z / Z.max()
+    max_filtered_Z = scipy.ndimage.maximum_filter(normalized_Z, size=max_filter_width)
+    max_indices = np.array(np.nonzero(normalized_Z == max_filtered_Z)).transpose()
+    nrows, ncols = X.shape
+
+    peak_coords = []
+    peak_amplitudes = []
+    for indices in max_indices:
+        i, j = indices
+        i_start = i - fit_radius if i - fit_radius >= 0 else 0
+        i_end = i + fit_radius if i + fit_radius < nrows else nrows
+        j_start = j - fit_radius if j - fit_radius >= 0 else 0
+        j_end = j + fit_radius if j + fit_radius < ncols else ncols
+        X_fit = X[i_start:i_end, j_start:j_end]
+        Y_fit = Y[i_start:i_end, j_start:j_end]
+        Z_fit = normalized_Z[i_start:i_end, j_start:j_end]
+        try:
+            fit, cov = gaussian_fit2D(X_fit, Y_fit, Z_fit)
+            coord = np.array([fit[1], fit[2]])
+            amplitude = fit[0]
+            if amplitude > min_amplitude:
+                peak_coords.append(coord)
+                peak_amplitudes.append(fit[0])
+        except:
+            pass
+
+    if not full_output:
+        return np.array(peak_coords)
+    else:
+        return np.array(peak_coords), peak_amplitudes
 
 
 def copy_text_to_clipboard(text: str):

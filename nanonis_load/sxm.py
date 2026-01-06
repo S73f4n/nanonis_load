@@ -583,6 +583,14 @@ def scale(data: np.ndarray, multiply_factor: float) -> np.ndarray:
     return data * multiply_factor
 
 
+def subtract_mean(data: np.ndarray) -> np.ndarray:
+    """Returns the input with its mean subtracted from it."""
+    if len(data.shape) != 2:
+        raise ValueError("ValueError: array must be 2-dimensional.")
+
+    return data - np.mean(data)
+
+
 def subtract_plane(data: np.ndarray) -> np.ndarray:
     """
     Returns the input but with a plane subtracted from the entire array.
@@ -927,7 +935,7 @@ class Plot:
         direction: int = 0,
         flatten: bool = False,
         subtract_plane: bool = False,
-        subtract_line : bool = False,
+        subtract_line: bool = False,
         cmap=util.get_w_cmap(),
         rasterized=True,
     ):
@@ -962,7 +970,7 @@ class Plot:
         # x = x.T
         # y = y.T
 
-        if subtract_line == True :
+        if subtract_line == True:
             image_data = sxm_data.subtract_linear_by_line(channel, direction)
 
         if subtract_plane == True:
