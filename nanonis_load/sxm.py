@@ -582,6 +582,24 @@ def scale(data: np.ndarray, multiply_factor: float) -> np.ndarray:
     """
     return data * multiply_factor
 
+def subtract_minimum(data: np.ndarray) -> np.ndarray:
+    """
+    Returns the input but with a the minimum value shifted to zero from the entire array.
+    The input MUST be a 2D array.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        2D numpy array containing data.
+
+    Returns
+    -------
+    output : ndarray
+        The data with minimum subtracted.
+    """
+    return data - np.min(data) 
+
+
 
 def subtract_plane(data: np.ndarray) -> np.ndarray:
     """
