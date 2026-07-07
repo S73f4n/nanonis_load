@@ -1332,11 +1332,20 @@ class older_Grid:
                 plt.subplots_adjust(wspace=0.3)
 
         # Plot grid
-        self.im = self.plot_ax.imshow(
-            np.flipud(self.data[channel][:, :, sweep_index]),
-            extent=(0, self.header["x_size (nm)"], 0, self.header["y_size (nm)"]),
-            cmap="magma_r",
-        )  # Check to make sure x_size and y_size aren't mixed up
+        if self.data[channel][:, :, sweep_index].ndim == 1 or 1 in self.data[channel][:, :, sweep_index].shape[:2]:
+            self.im = self.plot_ax.imshow(
+                np.flipud(self.data[channel][:, :, sweep_index]),
+                aspect="auto",
+                interpolation="nearest",
+                # extent=(0, self.header["x_size (nm)"], 0, self.header["y_size (nm)"]),
+                cmap="magma_r",
+            )  # Check to make sure x_size and y_size aren't mixed up
+        else:
+            self.im = self.plot_ax.imshow(
+                np.flipud(self.data[channel][:, :, sweep_index]),
+                extent=(0, self.header["x_size (nm)"], 0, self.header["y_size (nm)"]),
+                cmap="magma_r",
+            )  # Check to make sure x_size and y_size aren't mixed up
         if self.fft:
             fft_array = np.absolute(np.fft.fft2(np.flipud(self.data[channel][:, :, 0])))
             max_fft = np.max(fft_array[1:-1, 1:-1])
@@ -1507,16 +1516,27 @@ class older_Grid:
 
         if self.click is None:
             return
-        x_pixel = int(
-            np.floor(
-                self.click[0] * self.header["x_pixels"] / self.header["x_size (nm)"]
-            )
-        )
-        y_pixel = int(
-            np.floor(
-                self.click[1] * self.header["y_pixels"] / self.header["y_size (nm)"]
-            )
-        )
+        try:
+            if self.header["x_size (nm)"] > 0.0:
+                x_pixel = int(
+                    np.floor(
+                        self.click[0] * self.header["x_pixels"] / self.header["x_size (nm)"]
+                    )
+                )
+            else:
+                x_pixel = 0
+
+            if self.header["y_size (nm)"] > 0.0:
+                y_pixel = int(
+                    np.floor(
+                        self.click[1] * self.header["y_pixels"] / self.header["y_size (nm)"]
+                    )
+                )
+            else:
+                y_pixel = 0
+        except TypeError:
+            return
+
         if ax is None:
             fig = plt.figure()
             ax = fig.add_subplot(111)
