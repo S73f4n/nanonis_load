@@ -1384,7 +1384,8 @@ class older_Grid:
 
         self.plot_ax.set_xlabel("X (nm)")
         self.plot_ax.set_ylabel("Y (nm)")
-        self.colorbar = self.fig.colorbar(self.im, ax=self.plot_ax)
+        if cbar:
+            self.colorbar = self.fig.colorbar(self.im, ax=self.plot_ax)
         self.free = 0
         title = "Energy = " + str(round(self.biases[sweep_index] * 1000, 4)) + "meV"
         self.plot_ax.set_title(title)
