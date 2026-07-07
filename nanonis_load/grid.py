@@ -1336,18 +1336,18 @@ class older_Grid:
         else:
             self.fft_plot = None
 
-        # Line representing the linecut will be drawn here
-        self.linecut_line = matplotlib.lines.Line2D(
-            [0, 0], [0, 0], color="r", linewidth=3
-        )
-        self.plot_ax.add_line(self.linecut_line)
-        # Empty linecut plot as placeholder first
-        self.linecut_plot = self.linecut_ax.imshow(
-            np.zeros((1, 1)), cmap="RdYlBu_r", aspect="auto"
-        )
-        self.fig.colorbar(self.linecut_plot)
-        self.linecut_ax.set_xlabel("Distance (nm)")
-        self.linecut_ax.set_ylabel("Bias (V)")
+        # # Line representing the linecut will be drawn here
+        # self.linecut_line = matplotlib.lines.Line2D(
+        #     [0, 0], [0, 0], color="r", linewidth=3
+        # )
+        # self.plot_ax.add_line(self.linecut_line)
+        # # Empty linecut plot as placeholder first
+        # self.linecut_plot = self.linecut_ax.imshow(
+        #     np.zeros((1, 1)), cmap="RdYlBu_r", aspect="auto"
+        # )
+        # self.fig.colorbar(self.linecut_plot)
+        # self.linecut_ax.set_xlabel("Distance (nm)")
+        # self.linecut_ax.set_ylabel("Bias (V)")
 
         if self.fft:
             self.fft_linecut_line = matplotlib.lines.Line2D([0, 0], [0, 0], color="r")
