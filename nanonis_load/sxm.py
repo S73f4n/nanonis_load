@@ -955,6 +955,8 @@ class Plot:
         subtract_plane: bool = False,
         cover: float = 1,
         subtract_line: bool = False,
+        reverse: bool = False,
+        overrange: bool = False,
         cmap=util.get_w_cmap(),
         rasterized=True,
         cbar : bool = True,
@@ -1002,6 +1004,15 @@ class Plot:
             image_data = sxm_data.subtract_plane(channel, direction)
         # shading = 'auto' in the pcolormesh command forces pcolormesh to accept x, y with the same dimensions as image_data.T
 
+        if reverse:
+            cmap = plt.get_cmap(cmap).reversed()
+        else:
+            cmap = plt.get_cmap(cmap)
+        cmap = plt.get_cmap(cmap)
+        cmap.set_bad(color='#dddddd')
+        if overrange == True:
+            cmap.set_over(color='#ff0000')
+            cmap.set_under(color="#0000ff")
         vmin, vmax = self.central_percentile_limits(image_data, cover=cover)
         self.im_plot = self.ax.imshow(
             image_data,
