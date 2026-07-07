@@ -1456,6 +1456,16 @@ class older_Grid:
             self.plot_ax.set_title(title,fontsize='small')
             self.fig.canvas.draw()
 
+        def update_bias(freeBias):
+            biasValue = int((len(self.biases)-1) * freeBias)
+            data = np.flipud(self.data[channel][:, :, biasValue])
+            self.im.set_data(data)
+            self.im.set_clim(data.min(), data.max())
+
+            title = self.filename.split("/")[-1].split("\\")[-1] + "\n" + self.header['Start time'].replace("\"","") + '\n{:g} × {:g} nm ({:g} × {:g} px)\nEnergy = {:.4g} eV'.format(self.x_size,self.y_size,self.x_pixels,self.y_pixels,self.biases[biasValue])
+            self.plot_ax.set_title(title,fontsize='small')
+            self.fig.canvas.draw()
+
         def on_press(event):
             if event.inaxes == self.plot_ax and event.button == 1:
                 self.click = (event.xdata, event.ydata)
