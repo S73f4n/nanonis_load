@@ -953,6 +953,7 @@ class Plot:
         direction: int = 0,
         flatten: bool = False,
         subtract_plane: bool = False,
+        cover: float = 1,
         subtract_line: bool = False,
         cmap=util.get_w_cmap(),
         rasterized=True,
@@ -1001,12 +1002,15 @@ class Plot:
             image_data = sxm_data.subtract_plane(channel, direction)
         # shading = 'auto' in the pcolormesh command forces pcolormesh to accept x, y with the same dimensions as image_data.T
 
+        vmin, vmax = self.central_percentile_limits(image_data, cover=cover)
         self.im_plot = self.ax.imshow(
             image_data,
             origin="lower",
             extent=(0, sxm_data.x_range, 0, sxm_data.y_range),
             cmap=cmap,
             rasterized=rasterized,
+            vmin=vmin,
+            vmax=vmax
         )  # pcolormesh chops off last column and row here
         self.ax.set_aspect("equal")
         if cbar:
@@ -1025,7 +1029,57 @@ class Plot:
     def colormap(self, cmap):
         self.im_plot.set_cmap(cmap)
 
-    def add_spectra(self, spectra, labels=None):
+    def central_percentile_limits(self, image_data, cover=1.0, ignore_nan=True, mask=None, eps=1e-15):
+        """
+        Return (vmin, vmax) capturing the central `cover` fraction of values in `a`.
+
+        Parameters
+        ----------
+        a : array-like
+            Image / matrix values.
+        cover : float in (0, 1]
+            Fraction of the histogram to keep. Example: 0.98 keeps the central 98%
+            (clips 1% on each tail). 1.0 means no clipping.
+        ignore_nan : bool
+            If True, ignore NaNs when computing percentiles.
+        mask : array-like of bool, optional
+            If provided, only use values where mask is True.
+        eps : float
+            Tiny expansion added if vmin == vmax to avoid zero range.
+
+        Returns
+        -------
+        (vmin, vmax) : tuple of floats
+        """
+        a = np.asanyarray(image_data)
+
+        if mask is not None:
+            a = a[mask]
+
+        # Flatten and filter finite values
+        a = a.ravel()
+        if ignore_nan:
+            a = a[np.isfinite(a)]
+
+        if a.size == 0:
+            raise ValueError("No finite data to compute percentile limits.")
+
+        low_q = (1 - cover) * 50.0
+        high_q = 100.0 - low_q
+
+        # Percentiles are unitless—works regardless of the data's physical units.
+        pfunc = np.nanpercentile if ignore_nan else np.percentile
+        vmin, vmax = pfunc(a, [low_q, high_q])
+
+        if not np.isfinite(vmin): vmin = np.min(a)
+        if not np.isfinite(vmax): vmax = np.max(a)
+        if vmin == vmax:
+            vmin -= eps
+            vmax += eps
+
+        return float(vmin), float(vmax)
+
+    def add_spectra(self, spectra, labels=None, channel = "Bias calc (V)"):
 
         try:
             from . import didv
