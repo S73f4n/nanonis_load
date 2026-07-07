@@ -1305,18 +1305,7 @@ class older_Grid:
         bias_index = np.argmin(np.abs(self.biases - bias))
         return self.data[channel][:, :, bias_index]
 
-    def plot(self, sweep_index=0, channel="Input 2 (V)"):
-        # Create axes for plotting
-        if self.fft:
-            self.fig = plt.figure(figsize=[2 * 6.4, 4.8])
-            self.plot_ax = self.fig.add_subplot(221)
-            self.fft_ax = self.fig.add_subplot(222)
-            self.linecut_ax = self.fig.add_subplot(223)  # Axes for linecut through grid
-            self.fft_linecut_ax = self.fig.add_subplot(
-                224
-            )  # Axes for linecut through fft
-            self.linecut_ax.set_aspect("auto")
-            self.fft_linecut_ax.set_aspect("auto")
+    def plot(self, sweep_index=0, channel="Input 2 (V)",cbar=False):
 
         else:
             self.fig = plt.figure(figsize=[2 * 6.4, 4.8])
@@ -1369,7 +1358,8 @@ class older_Grid:
 
         self.plot_ax.set_xlabel("X (nm)")
         self.plot_ax.set_ylabel("Y (nm)")
-        self.colorbar = self.fig.colorbar(self.im, ax=self.plot_ax)
+        if cbar:
+            self.colorbar = self.fig.colorbar(self.im, ax=self.plot_ax)
         self.free = 0
         title = "Energy = " + str(round(self.biases[sweep_index] * 1000, 4)) + "meV"
         self.plot_ax.set_title(title)
