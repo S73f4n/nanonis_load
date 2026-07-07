@@ -1154,7 +1154,7 @@ class Plot:
             return np.fft.fftshift(np.fft.fft2(np.fft.fftshift(window * image_data)))
 
         fft_array = np.abs(correct_fft2D(self.image_data, window_function))
-        max_fft = np.max(fft_array[1:-1, 1:-1])
+        max_fft = np.log(1+ np.mean(fft_array)) * level
         fft_x = -np.pi / (
             self.data.header["x_range (nm)"] / self.data.header["x_pixels"]
         )
@@ -1162,7 +1162,7 @@ class Plot:
             self.data.header["y_range (nm)"] / self.data.header["y_pixels"]
         )
         self.fft_plot = self.fft_ax.imshow(
-            fft_array, extent=[fft_x, -fft_x, -fft_y, fft_y], origin="lower"
+            np.log(1+fft_array), extent=[fft_x, -fft_x, -fft_y, fft_y], origin="lower"
         )
         self.fft_fig.colorbar(self.fft_plot, ax=self.fft_ax)
         self.fft_clim(0, max_fft)
