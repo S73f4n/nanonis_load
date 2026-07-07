@@ -61,8 +61,8 @@ class Nanonis3ds:
                 self.header[entry_array[0]] = "=".join(entry_array[1:])
 
         temp = re.split(' |"', self.header["Grid dim"])
-        self.header["x_pixels"] = int(temp[1])
-        self.header["y_pixels"] = int(temp[3])
+        self.header["x_pixels"] = int(temp[3])
+        self.header["y_pixels"] = int(temp[1])
         temp = re.split(";|=", self.header["Grid settings"])
         self.header["x_center (nm)"] = float(temp[0]) * 1e9
         self.header["y_center (nm)"] = float(temp[1]) * 1e9
