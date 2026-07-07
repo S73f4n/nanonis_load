@@ -1169,7 +1169,8 @@ class Plot:
         self.fft_plot = self.fft_ax.imshow(
             np.log(1+fft_array), extent=[fft_x, -fft_x, -fft_y, fft_y], origin="lower"
         )
-        self.fft_fig.colorbar(self.fft_plot, ax=self.fft_ax)
+        if cbar:
+            self.fft_fig.colorbar(self.fft_plot, ax=self.fft_ax)
         self.fft_clim(0, max_fft)
 
     def fft_clim(self, c_min, c_max):
