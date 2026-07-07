@@ -1318,7 +1318,7 @@ class older_Grid:
         self.im = self.plot_ax.imshow(
             np.flipud(self.data[channel][:, :, sweep_index]),
             extent=(0, self.header["x_size (nm)"], 0, self.header["y_size (nm)"]),
-            cmap="Blues_r",
+            cmap="magma_r",
         )  # Check to make sure x_size and y_size aren't mixed up
         if self.fft:
             fft_array = np.absolute(np.fft.fft2(np.flipud(self.data[channel][:, :, 0])))
