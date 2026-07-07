@@ -1362,18 +1362,18 @@ class older_Grid:
         else:
             self.fft_plot = None
 
-        # Line representing the linecut will be drawn here
-        self.linecut_line = matplotlib.lines.Line2D(
-            [0, 0], [0, 0], color="r", linewidth=3
-        )
-        self.plot_ax.add_line(self.linecut_line)
-        # Empty linecut plot as placeholder first
-        self.linecut_plot = self.linecut_ax.imshow(
-            np.zeros((1, 1)), cmap="RdYlBu_r", aspect="auto"
-        )
-        self.fig.colorbar(self.linecut_plot)
-        self.linecut_ax.set_xlabel("Distance (nm)")
-        self.linecut_ax.set_ylabel("Bias (V)")
+        # # Line representing the linecut will be drawn here
+        # self.linecut_line = matplotlib.lines.Line2D(
+        #     [0, 0], [0, 0], color="r", linewidth=3
+        # )
+        # self.plot_ax.add_line(self.linecut_line)
+        # # Empty linecut plot as placeholder first
+        # self.linecut_plot = self.linecut_ax.imshow(
+        #     np.zeros((1, 1)), cmap="RdYlBu_r", aspect="auto"
+        # )
+        # self.fig.colorbar(self.linecut_plot)
+        # self.linecut_ax.set_xlabel("Distance (nm)")
+        # self.linecut_ax.set_ylabel("Bias (V)")
 
         if self.fft:
             self.fft_linecut_line = matplotlib.lines.Line2D([0, 0], [0, 0], color="r")
@@ -1469,25 +1469,27 @@ class older_Grid:
         def on_press(event):
             if event.inaxes == self.plot_ax and event.button == 1:
                 self.click = (event.xdata, event.ydata)
-                self.linecut_line.set_xdata([event.xdata, event.xdata])
-                self.linecut_line.set_ydata([event.ydata, event.ydata])
+                self.show_spectra(channel=self.channel)
+                # self.linecut_line.set_xdata([event.xdata, event.xdata])
+                # self.linecut_line.set_ydata([event.ydata, event.ydata])
             else:
                 return
 
-        def on_motion(event):
-            if event.inaxes == self.plot_ax and event.button == 1:
-                self.linecut_line.set_xdata([self.click[0], event.xdata])
-                self.linecut_line.set_ydata([self.click[1], event.ydata])
-                update_linecut()
-                self.fig.canvas.draw()
+        # def on_motion(event):
+        #     if event.inaxes == self.plot_ax and event.button == 1:
+        #         self.linecut_line.set_xdata([self.click[0], event.xdata])
+        #         self.linecut_line.set_ydata([self.click[1], event.ydata])
+        #         update_linecut()
+        #         self.fig.canvas.draw()
 
         def on_release(event):
             return
 
         self.key_press = key_press
+        self.update_bias = update_bias
         self.fig.canvas.mpl_connect("key_press_event", key_press)
-        self.fig.canvas.mpl_connect("button_press_event", on_press)
-        self.fig.canvas.mpl_connect("motion_notify_event", on_motion)
+        # self.fig.canvas.mpl_connect("button_press_event", on_press)
+        # self.fig.canvas.mpl_connect("motion_notify_event", on_motion)
         self.fig.canvas.mpl_connect("button_release_event", on_release)
 
     def clim(self, c_min, c_max):
@@ -1552,8 +1554,9 @@ class older_Grid:
         transformed_vec = R.dot(xy_vec)
         transformed_x = transformed_vec[0] + self.header["x_center (nm)"]
         transformed_y = transformed_vec[1] + self.header["y_center (nm)"]
-        print("x = " + str(transformed_x) + " nm")
-        print("y = " + str(transformed_y) + " nm")
+        # print("x = " + str(transformed_x) + " nm")
+        # print("y = " + str(transformed_y) + " nm")
+        return 0
 
     # dpi does not work... why?
     # Needs a MovieWriter
