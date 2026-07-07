@@ -1305,25 +1305,31 @@ class older_Grid:
         bias_index = np.argmin(np.abs(self.biases - bias))
         return self.data[channel][:, :, bias_index]
 
-    def plot(self, sweep_index=0, channel="Input 2 (V)"):
-        # Create axes for plotting
-        if self.fft:
-            self.fig = plt.figure(figsize=[2 * 6.4, 4.8])
-            self.plot_ax = self.fig.add_subplot(221)
-            self.fft_ax = self.fig.add_subplot(222)
-            self.linecut_ax = self.fig.add_subplot(223)  # Axes for linecut through grid
-            self.fft_linecut_ax = self.fig.add_subplot(
-                224
-            )  # Axes for linecut through fft
-            self.linecut_ax.set_aspect("auto")
-            self.fft_linecut_ax.set_aspect("auto")
+    def plot(self, sweep_index=0, channel="Input 2 (V)",cbar=False, axes=None):
 
+        if axes is not None:
+            self.plot_ax = axes
+            self.fig = self.plot_ax.figure
         else:
-            self.fig = plt.figure(figsize=[2 * 6.4, 4.8])
-            self.plot_ax = self.fig.add_subplot(121)
-            self.linecut_ax = self.fig.add_subplot(122)  # Axes for linecut through grid
-            self.linecut_ax.set_aspect("auto")
-            plt.subplots_adjust(wspace=0.3)
+
+            # Create axes for plotting
+            if self.fft:
+                self.fig = plt.figure(figsize=[2 * 6.4, 4.8])
+                self.plot_ax = self.fig.add_subplot(221)
+                self.fft_ax = self.fig.add_subplot(222)
+                self.linecut_ax = self.fig.add_subplot(223)  # Axes for linecut through grid
+                self.fft_linecut_ax = self.fig.add_subplot(
+                    224
+                )  # Axes for linecut through fft
+                self.linecut_ax.set_aspect("auto")
+                self.fft_linecut_ax.set_aspect("auto")
+
+            else:
+                self.fig = plt.figure(figsize=[2 * 6.4, 4.8])
+                self.plot_ax = self.fig.add_subplot(121)
+                self.linecut_ax = self.fig.add_subplot(122)  # Axes for linecut through grid
+                self.linecut_ax.set_aspect("auto")
+                plt.subplots_adjust(wspace=0.3)
 
         # Plot grid
         if self.data[channel][:, :, sweep_index].ndim == 1 or 1 in self.data[channel][:, :, sweep_index].shape[:2]:
