@@ -1139,9 +1139,14 @@ class Plot:
             self.fig.canvas.mpl_connect("pick_event", pick_caller)
 
     # TO DO: Add window functions.
-    def fft(self, window_function=None):
-        self.fft_fig = plt.figure()
-        self.fft_ax = self.fft_fig.add_subplot(111)
+    def fft(self, window_function=None, level=20, cbar=False, axes=None):
+
+        if axes is not None:
+            self.fft_ax = axes
+            self.fft_fig = self.fft_ax.figure
+        else:
+            self.fft_fig = plt.figure()
+            self.fft_ax = self.fft_fig.add_subplot(111)
 
         def correct_fft2D(
             image_data: np.ndarray, window_function: str = ""
