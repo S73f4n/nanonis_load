@@ -968,6 +968,7 @@ class Plot:
         image_data = np.copy(sxm_data.data[channel][direction])
         avg_dat = image_data[~np.isnan(image_data)].mean()
         image_data[np.isnan(image_data)] = avg_dat
+        image_data = np.ma.masked_where(image_data == 0.0, image_data)
         if (flatten) and (subtract_plane == False):
             image_data = scipy.signal.detrend(image_data)
 
