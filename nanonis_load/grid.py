@@ -1307,12 +1307,12 @@ class older_Grid:
 
     def plot(self, sweep_index=0, channel="Input 2 (V)",cbar=False):
 
-        else:
-            self.fig = plt.figure(figsize=[2 * 6.4, 4.8])
-            self.plot_ax = self.fig.add_subplot(121)
-            self.linecut_ax = self.fig.add_subplot(122)  # Axes for linecut through grid
-            self.linecut_ax.set_aspect("auto")
-            plt.subplots_adjust(wspace=0.3)
+            else:
+                self.fig = plt.figure(figsize=[2 * 6.4, 4.8])
+                self.plot_ax = self.fig.add_subplot(121)
+                self.linecut_ax = self.fig.add_subplot(122)  # Axes for linecut through grid
+                self.linecut_ax.set_aspect("auto")
+                plt.subplots_adjust(wspace=0.3)
 
         # Plot grid
         self.im = self.plot_ax.imshow(
