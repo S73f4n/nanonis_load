@@ -613,6 +613,7 @@ def subtract_plane(data: np.ndarray) -> np.ndarray:
     """
     Returns the input but with a plane subtracted from the entire array.
     The input MUST be a 2D array.
+    Masked pixels are excluded from the fit, and the output preserves the mask.
 
     Parameters
     ----------
@@ -634,14 +635,21 @@ def subtract_plane(data: np.ndarray) -> np.ndarray:
     X, Y = np.meshgrid(np.arange(0, x_dim), np.arange(0, y_dim))
     flattened_X = X.flatten()
     flattened_Y = Y.flatten()
-    flattened_data = data.flatten()
+    flattened_data = np.ma.getdata(data).ravel()
+    valid = ~np.ma.getmaskarray(data).ravel()
+
+    if valid.sum() < 3:
+        raise ValueError("At least three unmasked pixels are required.")
 
     A = np.c_[
         flattened_X, flattened_Y, np.ones(len(flattened_X))
     ]  # Puts flattened_X, flattened_Y, and a column of ones into the columns of a matrix A
-    C, _, _, _ = scipy.linalg.lstsq(
-        A, flattened_data
+    C, _, rank, _ = scipy.linalg.lstsq(
+        A[valid], flattened_data[valid]
     )  # Finds the least squares solution to Ax = flattened_data where x contains the coefficients of the plane equation
+
+    if rank < 3:
+        raise ValueError("Unmasked pixels must not all lie on a straight line.")
 
     Z = C[0] * X + C[1] * Y + C[2]  # Feeds X and Y into the fitted plane equation
 
@@ -655,6 +663,7 @@ def subtract_parabola(data: np.ndarray) -> np.ndarray:
     """
     Returns the input but with a parabolic fit over the entire array subtracted.
     The input MUST be a 2D array.
+    Masked pixels are excluded from the fit, and the output preserves the mask.
 
     Parameters
     ----------
@@ -676,7 +685,11 @@ def subtract_parabola(data: np.ndarray) -> np.ndarray:
     X, Y = np.meshgrid(np.arange(0, x_dim), np.arange(0, y_dim))
     flattened_X = X.flatten()
     flattened_Y = Y.flatten()
-    flattened_data = data.flatten()
+    flattened_data = np.ma.getdata(data).ravel()
+    valid = ~np.ma.getmaskarray(data).ravel()
+
+    if valid.sum() < 6:
+        raise ValueError("At least six unmasked pixels are required.")
 
     A = np.c_[
         flattened_X**2,
@@ -686,9 +699,12 @@ def subtract_parabola(data: np.ndarray) -> np.ndarray:
         flattened_Y,
         np.ones(len(flattened_X)),
     ]  # Puts flattened arrays into the columns of a matrix.
-    C, _, _, _ = scipy.linalg.lstsq(
-        A, flattened_data
+    C, _, rank, _ = scipy.linalg.lstsq(
+        A[valid], flattened_data[valid]
     )  # Finds the least squares solution to Ax = flattened_data where x contains the coefficients of the plane equation
+
+    if rank < 6:
+        raise ValueError("Unmasked pixels do not determine a unique 2D quadratic fit.")
 
     Z = (
         C[0] * (X**2) + C[1] * (Y**2) + C[2] * (X * Y) + C[3] * X + C[4] * Y + C[5]
